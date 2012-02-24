@@ -72,6 +72,10 @@
                         $tip.css("left", (tp["left"] - marginWidth));
                         break;
                 }
+
+                console.log(pos.left);
+                console.log(actualWidth);
+                console.log(marginWidth);
                 
                 if (this.options.fade) {
                     $tip.stop().css({opacity: 0, display: 'block', visibility: 'visible'}).animate({opacity: this.options.opacity});
