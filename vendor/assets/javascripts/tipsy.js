@@ -5,12 +5,16 @@
 
 (function($) {
     
+    function maybeCall(thing, ctx) {
+        return (typeof thing == 'function') ? (thing.call(ctx)) : thing;
+    };
+    
     function Tipsy(element, options) {
         this.$element = $(element);
         this.options = options;
         this.enabled = true;
         this.fixTitle();
-    }
+    };
     
     Tipsy.prototype = {
         show: function() {
@@ -20,33 +24,30 @@
                 
                 $tip.find('.tipsy-inner')[this.options.html ? 'html' : 'text'](title);
                 $tip[0].className = 'tipsy'; // reset classname in case of dynamic gravity
-                $tip.remove().css({top: 0, left: 0, visibility: 'hidden', display: 'block'}).appendTo(document.body);
+                $tip.remove().css({top: 0, left: 0, visibility: 'hidden', display: 'block'}).prependTo(document.body);
                 
                 var pos = $.extend({}, this.$element.offset(), {
                     width: this.$element[0].offsetWidth,
                     height: this.$element[0].offsetHeight
                 });
                 
-                var actualWidth = $tip[0].offsetWidth, actualHeight = $tip[0].offsetHeight;
-                var gravity = (typeof this.options.gravity == 'function')
-                                ? this.options.gravity.call(this.$element[0])
-                                : this.options.gravity;
-                var offset = (typeof this.options.offset == 'function')
-                                ? this.options.offset.call(this.$element[0])
-                                : this.options.offset;
+                var actualWidth = $tip[0].offsetWidth,
+                    actualHeight = $tip[0].offsetHeight,
+                    gravity = maybeCall(this.options.gravity, this.$element[0]);
+                
                 var tp;
                 switch (gravity.charAt(0)) {
                     case 'n':
-                        tp = {top: pos.top + pos.height + offset, left: pos.left + pos.width / 2 - actualWidth / 2};
+                        tp = {top: pos.top + pos.height + this.options.offset, left: pos.left + pos.width / 2 - actualWidth / 2};
                         break;
                     case 's':
-                        tp = {top: pos.top - actualHeight - offset, left: pos.left + pos.width / 2 - actualWidth / 2};
+                        tp = {top: pos.top - actualHeight - this.options.offset, left: pos.left + pos.width / 2 - actualWidth / 2};
                         break;
                     case 'e':
-                        tp = {top: pos.top + pos.height / 2 - actualHeight / 2, left: pos.left - actualWidth - offset};
+                        tp = {top: pos.top + pos.height / 2 - actualHeight / 2, left: pos.left - actualWidth - this.options.offset};
                         break;
                     case 'w':
-                        tp = {top: pos.top + pos.height / 2 - actualHeight / 2, left: pos.left + pos.width + offset};
+                        tp = {top: pos.top + pos.height / 2 - actualHeight / 2, left: pos.left + pos.width + this.options.offset};
                         break;
                 }
                 
@@ -59,7 +60,18 @@
                 }
                 
                 $tip.css(tp).addClass('tipsy-' + gravity);
-                $tip.css(tp).addClass(this.options.className);
+                $tip.find('.tipsy-arrow')[0].className = 'tipsy-arrow tipsy-arrow-' + gravity.charAt(0);
+                if (this.options.className) {
+                    $tip.addClass(maybeCall(this.options.className, this.$element[0]));
+                }
+
+                //ISK: fix actual height and width diff
+                marginWidth = $tip[0].offsetWidth - actualWidth;
+                switch (gravity.charAt(0)) {
+                    case 'e':
+                        $tip.css("left", (tp["left"] - marginWidth));
+                        break;
+                }
                 
                 if (this.options.fade) {
                     $tip.stop().css({opacity: 0, display: 'block', visibility: 'visible'}).animate({opacity: this.options.opacity});
@@ -173,6 +185,7 @@
     };
     
     $.fn.tipsy.defaults = {
+        className: null,
         delayIn: 0,
         delayOut: 0,
         fade: false,
@@ -183,8 +196,7 @@
         offset: 0,
         opacity: 0.8,
         title: 'title',
-        trigger: 'hover',
-        className: ''
+        trigger: 'hover'
     };
     
     // Overwrite this method to provide options on a per-element basis.
@@ -201,6 +213,37 @@
     
     $.fn.tipsy.autoWE = function() {
         return $(this).offset().left > ($(document).scrollLeft() + $(window).width() / 2) ? 'e' : 'w';
+    };
+    
+    /**
+     * yields a closure of the supplied parameters, producing a function that takes
+     * no arguments and is suitable for use as an autogravity function like so:
+     *
+     * @param margin (int) - distance from the viewable region edge that an
+     *        element should be before setting its tooltip's gravity to be away
+     *        from that edge.
+     * @param prefer (string, e.g. 'n', 'sw', 'w') - the direction to prefer
+     *        if there are no viewable region edges effecting the tooltip's
+     *        gravity. It will try to vary from this minimally, for example,
+     *        if 'sw' is preferred and an element is near the right viewable 
+     *        region edge, but not the top edge, it will set the gravity for
+     *        that element's tooltip to be 'se', preserving the southern
+     *        component.
+     */
+     $.fn.tipsy.autoBounds = function(margin, prefer) {
+        return function() {
+            var dir = {ns: prefer[0], ew: (prefer.length > 1 ? prefer[1] : false)},
+                boundTop = $(document).scrollTop() + margin,
+                boundLeft = $(document).scrollLeft() + margin,
+                $this = $(this);
+
+            if ($this.offset().top < boundTop) dir.ns = 'n';
+            if ($this.offset().left < boundLeft) dir.ew = 'w';
+            if ($(window).width() + $(document).scrollLeft() - $this.offset().left < margin) dir.ew = 'e';
+            if ($(window).height() + $(document).scrollTop() - $this.offset().top < margin) dir.ns = 's';
+
+            return dir.ns + (dir.ew ? dir.ew : '');
+        }
     };
     
 })(jQuery);
