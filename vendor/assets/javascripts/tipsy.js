@@ -30,9 +30,8 @@
                     width: this.$element[0].offsetWidth,
                     height: this.$element[0].offsetHeight
                 });
-                
-                var actualWidth = $tip[0].offsetWidth,
-                    actualHeight = $tip[0].offsetHeight,
+                var actualWidth = (this.options.actualWidth ? maybeCall(this.options.actualWidth, this.$element[0]) : $tip[0].offsetWidth),
+                    actualHeight = (this.options.actualHeight ? maybeCall(this.options.actualWidth, this.$element[0]) : $tip[0].offsetHeight),
                     gravity = maybeCall(this.options.gravity, this.$element[0]);
                 
                 var tp;
@@ -64,18 +63,6 @@
                 if (this.options.className) {
                     $tip.addClass(maybeCall(this.options.className, this.$element[0]));
                 }
-
-                //ISK: fix actual height and width diff
-                marginWidth = $tip[0].offsetWidth - actualWidth;
-                switch (gravity.charAt(0)) {
-                    case 'e':
-                        $tip.css("left", (tp["left"] - marginWidth));
-                        break;
-                }
-
-                console.log(pos.left);
-                console.log(actualWidth);
-                console.log(marginWidth);
                 
                 if (this.options.fade) {
                     $tip.stop().css({opacity: 0, display: 'block', visibility: 'visible'}).animate({opacity: this.options.opacity});
@@ -200,7 +187,9 @@
         offset: 0,
         opacity: 0.8,
         title: 'title',
-        trigger: 'hover'
+        trigger: 'hover',
+        actualWidth: null,
+        actualHeight: null
     };
     
     // Overwrite this method to provide options on a per-element basis.
