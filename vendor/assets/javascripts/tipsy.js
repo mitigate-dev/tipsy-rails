@@ -31,7 +31,7 @@
                     height: this.$element[0].offsetHeight
                 });
                 var actualWidth = (this.options.actualWidth ? maybeCall(this.options.actualWidth, this.$element[0]) : $tip[0].offsetWidth),
-                    actualHeight = (this.options.actualHeight ? maybeCall(this.options.actualWidth, this.$element[0]) : $tip[0].offsetHeight),
+                    actualHeight = (this.options.actualHeight ? maybeCall(this.options.actualHeight, this.$element[0]) : $tip[0].offsetHeight),
                     gravity = maybeCall(this.options.gravity, this.$element[0]);
                 
                 var tp;
